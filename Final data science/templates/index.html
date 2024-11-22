@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Predicción de Tumores</title>
+    <style>
+        /* Estilos generales */
+        body { 
+            font-family: Arial, sans-serif; 
+            background-color: #f8f0f6;
+            color: #333; 
+            padding: 20px; 
+            margin: 0; 
+            background-image: url('https://cdn-3.expansion.mx/dims4/default/20dd73e/2147483647/strip/true/crop/1792x1024+0+0/resize/1800x1029!/format/webp/quality/80/?url=https%3A%2F%2Fcdn-3.expansion.mx%2Fc9%2Fa4%2F5a3f2a7a478dae75d272d55051e9%2Flazo-rosa-cancer-de-mama.png');
+            background-size: cover; 
+            background-position: center; 
+        }
+        h1 { 
+            color: #d5006d; 
+            text-align: center; 
+            font-size: 2.5em; 
+            margin-bottom: 20px; 
+            position: relative; 
+        }
+        h1::after {
+            content: ''; 
+            display: block; 
+            width: 100%; 
+            height: 4px; 
+            background-color: #ff4081; 
+            position: absolute; 
+            bottom: -10px; 
+            left: 0; 
+        }
+
+        #title-box {
+            background-color: rgba(255, 255, 255, 0.9);
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            margin: 0 auto;
+            max-width: 600px; 
+        }
+
+        h3 { 
+            color: #555; 
+            font-weight: normal; 
+            margin-top: 30px; 
+            border-bottom: 2px solid #d5006d; 
+            padding-bottom: 8px; 
+        }
+
+        form {
+            background-color: rgba(255, 255, 255, 0.9);
+            border: 1px solid #ddd;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            max-width: 400px;
+            margin: 20px auto;
+        }
+        input[type="file"] { 
+            padding: 12px; 
+            width: 100%; 
+            border: 1px solid #ddd; 
+            border-radius: 5px; 
+            margin-bottom: 15px; 
+            background-color: #f9f9f9; 
+            cursor: pointer; 
+        }
+        button { 
+            padding: 12px; 
+            width: 100%; 
+            background-color: #d5006d;
+            color: #fff; 
+            font-size: 16px; 
+            border: none; 
+            border-radius: 5px; 
+            cursor: pointer; 
+            transition: background-color 0.3s; 
+        }
+        button:hover { 
+            background-color: #a2004d; 
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse; 
+            margin-top: 20px;
+        }
+        table th, table td { 
+            padding: 12px; 
+            text-align: center; 
+            border: 1px solid #ddd; 
+        }
+        table th {
+            background-color: #d5006d; 
+            color: white; 
+            font-weight: bold; 
+        }
+        table tr:nth-child(even) { 
+            background-color: #f9f9f9; 
+        }
+
+        #result, #metrics, #malignant-ids {
+            background-color: rgba(255, 255, 255, 0.9); 
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 20px;
+            margin-top: 20px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            max-width: 600px;
+            margin: 20px auto;
+        }
+
+        /* Contenedor con barra deslizante */
+        #scrollable-table {
+            max-height: 300px;
+            overflow-y: auto;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+    </style>
+</head>
+<body>
+    <!-- Caja del título -->
+    <div id="title-box">
+        <h1>Predicción de Tumores</h1>
+    </div>
+
+    <!-- Formulario para subir archivo CSV -->
+    <h3>Subir archivo CSV con datos de tumores:</h3>
+    <form action="/bulk_predict" method="POST" enctype="multipart/form-data">
+        <input type="file" name="file" accept=".csv" required>
+        <button type="submit">Obtener Predicciones en Masa</button>
+    </form>
+
+    {% if predictions_summary is not none %}
+    <!-- Cuadro resumen de casos malignos y benignos -->
+    <div id="result">
+        <h3>Resultados de Predicción</h3>
+        <p>Total de casos: {{ total_cases }}</p>
+        <p>Malignos: {{ malignant_cases }} ({{ malignant_percentage }}%)</p>
+        <p>Benignos: {{ benign_cases }} ({{ benign_percentage }}%)</p>
+    </div>
+
+    <!-- Tabla con barra deslizante para IDs de pacientes con tumores malignos -->
+    <div id="malignant-ids">
+        <h3>Pacientes con Tumores Malignos</h3>
+        <div id="scrollable-table">
+            <table>
+                <thead>
+                    <tr>
+                        <th>ID del Paciente</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for id in malignant_ids %}
+                    <tr>
+                        <td>{{ id }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Mostrar métricas de rendimiento del modelo -->
+    {% if model_metrics is not none %}
+    <div id="metrics">
+        <h3>Métricas de Rendimiento del Modelo</h3>
+        <p>Precisión: {{ accuracy1 }}%</p>
+        <p>Recall: {{ recall1 }}%</p>
+        <p>F1 Score: {{ f11 }}%</p>
+    </div>
+    {% endif %}
+</body>
+</html>
